@@ -1,5 +1,7 @@
 # Lang10
 
+**Live:** https://lang10-production.up.railway.app
+
 Ten Japanese items a day, for English speakers. Short daily sets, spaced
 repetition, streaks, and audio — in the browser, with or without an account.
 
@@ -51,7 +53,23 @@ Generate a secret with `openssl rand -base64 32`.
 4. Redeploy. `scripts/start.sh` runs `prisma migrate deploy` on boot whenever
    `DATABASE_URL` is present, so the schema applies itself.
 
-`PORT` is supplied by Railway and honoured by the start script.
+Also set `PORT=3000`. Railway injects `PORT=8080` by default, while a generated
+domain targets the port you asked for — if the two disagree the service builds,
+boots, reports itself healthy in the logs, and still answers every request with
+a 502. Setting it explicitly keeps the domain, `EXPOSE`, and the start script in
+agreement.
+
+### Using Supabase for the database
+
+Supabase's direct host (`db.<ref>.supabase.co`) resolves to IPv6 only, which
+Railway cannot reach. Use the Supavisor pooler instead, in session mode:
+
+```
+postgresql://postgres.<ref>:<password>@aws-0-<region>.pooler.supabase.com:5432/postgres
+```
+
+The region is the project's, not necessarily the nearest one; connecting to the
+wrong pooler fails with `Tenant or user not found`.
 
 ## How the learning engine works
 
