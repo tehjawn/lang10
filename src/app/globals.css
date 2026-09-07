@@ -1,26 +1,118 @@
 @import "tailwindcss";
 
+/*
+ * Lang10 palette. Light values live on :root; the dark block only swaps the
+ * token values, so every component stays theme-agnostic.
+ */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --bg: #f6f6fb;
+  --bg-alt: #eeeef7;
+  --surface: #ffffff;
+  --surface-2: #fafaff;
+  --border: #e4e4f0;
+  --text: #15151f;
+  --muted: #6a6a80;
+  --accent: #5b5bd6;
+  --accent-soft: #ecebff;
+  --accent-fg: #ffffff;
+  --sakura: #e05f8a;
+  --success: #17914f;
+  --success-soft: #e3f7ec;
+  --danger: #d33b46;
+  --danger-soft: #fdeaec;
+  --ring-track: #e4e4f0;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --bg: #0a0a11;
+    --bg-alt: #10101a;
+    --surface: #14141f;
+    --surface-2: #1a1a27;
+    --border: #272738;
+    --text: #f1f1f6;
+    --muted: #9d9db4;
+    --accent: #8b8bf5;
+    --accent-soft: #1e1e3a;
+    --accent-fg: #0a0a11;
+    --sakura: #f58bb0;
+    --success: #3ecf8e;
+    --success-soft: #10281d;
+    --danger: #ff6b78;
+    --danger-soft: #2a1218;
+    --ring-track: #272738;
   }
 }
 
+@theme inline {
+  --color-bg: var(--bg);
+  --color-bg-alt: var(--bg-alt);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-border: var(--border);
+  --color-text: var(--text);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-fg: var(--accent-fg);
+  --color-sakura: var(--sakura);
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-jp: "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", "Noto Sans JP",
+    "Noto Sans CJK JP", "MS Gothic", sans-serif;
+}
+
+html {
+  color-scheme: light dark;
+}
+
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  /* Keeps the fixed mobile nav clear of the iOS home indicator. */
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Japanese glyphs need the CJK stack and a little extra tracking to read well. */
+.jp {
+  font-family: var(--font-jp);
+  letter-spacing: 0.02em;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.animate-pop {
+  animation: pop-in 0.22s ease-out both;
+}
+
+@keyframes shake {
+  10%, 90% { transform: translateX(-2px); }
+  30%, 70% { transform: translateX(4px); }
+  50% { transform: translateX(-4px); }
+}
+
+.animate-shake {
+  animation: shake 0.35s ease-in-out both;
 }

@@ -1,69 +1,140 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import Link from "next/link";
+import { UNITS } from "@/data/japanese";
+import { answeredToday, overallStats, unitStats } from "@/lib/progress";
+import { useProgress } from "@/lib/store";
+import { Bar, ButtonLink, Card, Ring, Stat } from "@/components/ui";
+
+export default function DashboardPage() {
+  const { progress, ready, user, accountsEnabled } = useProgress();
+
+  if (!ready) return <DashboardSkeleton />;
+
+  const done = answeredToday(progress);
+  const goal = progress.dailyGoal;
+  const stats = overallStats(progress);
+  const goalMet = done >= goal;
+  const started = stats.started > 0;
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
+    <div className="space-y-5">
+      <Card className="flex flex-col items-center gap-5 sm:flex-row sm:gap-7">
+        <Ring value={done} max={goal}>
+          <div>
+            <div className="text-3xl font-extrabold tabular-nums">{Math.min(done, goal)}</div>
+            <div className="text-xs font-semibold text-muted">of {goal}</div>
+          </div>
+        </Ring>
+
+        <div className="flex-1 text-center sm:text-left">
+          <h1 className="text-2xl font-extrabold tracking-tight text-balance">
+            {goalMet
+              ? "Today's goal is done 🎉"
+              : started
+                ? "Pick up where you left off"
+                : "Ten Japanese words a day"}
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+          <p className="mt-1.5 text-sm text-muted text-pretty">
+            {goalMet
+              ? `Come back tomorrow to keep the streak alive — or run an extra set now.`
+              : started
+                ? `${goal - done} to go. ${stats.due} card${stats.due === 1 ? "" : "s"} due for review.`
+                : "Short daily sets, spaced repetition, and audio. No account needed to start."}
           </p>
+
+          <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+            <ButtonLink href="/learn" size="lg" className="sm:px-8">
+              {goalMet ? "Extra practice" : started ? "Continue" : "Start learning"}
+            </ButtonLink>
+            {started && (
+              <ButtonLink href="/progress" size="lg" variant="outline">
+                See progress
+              </ButtonLink>
+            )}
+          </div>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+      </Card>
+
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <Stat label="Streak" value={`${progress.streak}🔥`} />
+        <Stat label="XP" value={progress.xp.toLocaleString()} />
+        <Stat label="Learned" value={`${stats.learned}/${stats.total}`} />
+        <Stat label="Due now" value={stats.due} />
+      </div>
+
+      {accountsEnabled && !user && started && <SaveProgressNudge />}
+
+      <section>
+        <h2 className="mb-3 px-1 text-sm font-bold tracking-wide text-muted uppercase">
+          Units
+        </h2>
+        <div className="grid gap-3 sm:grid-cols-2">
+          {UNITS.map((unit) => {
+            const u = unitStats(progress, unit.id);
+            return (
+              <Link
+                key={unit.id}
+                href={`/unit/${unit.id}`}
+                className="group rounded-2xl border border-border bg-surface p-4 transition hover:border-accent hover:bg-surface-2"
+              >
+                <div className="flex items-center gap-3">
+                  <span className="jp grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-accent-soft text-lg text-accent">
+                    {unit.emoji}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate font-bold">{unit.title}</div>
+                    <div className="truncate text-xs text-muted">{unit.subtitle}</div>
+                  </div>
+                  <div className="text-right text-xs font-semibold tabular-nums text-muted">
+                    {u.learned}/{u.total}
+                  </div>
+                </div>
+                <Bar pct={u.pct} className="mt-3" />
+              </Link>
+            );
+          })}
         </div>
-      </main>
+      </section>
+    </div>
+  );
+}
+
+function SaveProgressNudge() {
+  return (
+    <Card className="flex flex-col gap-3 border-accent/40 bg-accent-soft sm:flex-row sm:items-center">
+      <div className="flex-1">
+        <div className="font-bold">Keep your streak on every device</div>
+        <p className="text-sm text-muted">
+          Progress is saved in this browser. Create a free account to sync it.
+        </p>
+      </div>
+      <div className="flex gap-2">
+        <ButtonLink href="/signup" size="sm">
+          Create account
+        </ButtonLink>
+        <ButtonLink href="/login" size="sm" variant="outline">
+          Sign in
+        </ButtonLink>
+      </div>
+    </Card>
+  );
+}
+
+function DashboardSkeleton() {
+  return (
+    <div className="space-y-5" aria-busy>
+      <Card className="h-52 animate-pulse bg-surface-2" />
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        {Array.from({ length: 4 }, (_, i) => (
+          <div key={i} className="h-20 animate-pulse rounded-xl border border-border bg-surface-2" />
+        ))}
+      </div>
+      <div className="grid gap-3 sm:grid-cols-2">
+        {Array.from({ length: 4 }, (_, i) => (
+          <div key={i} className="h-24 animate-pulse rounded-2xl border border-border bg-surface-2" />
+        ))}
+      </div>
     </div>
   );
 }

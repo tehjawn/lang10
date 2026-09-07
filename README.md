@@ -1,36 +1,110 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Lang10
 
-## Getting Started
+Ten Japanese items a day, for English speakers. Short daily sets, spaced
+repetition, streaks, and audio — in the browser, with or without an account.
 
-First, run the development server:
+- **Local-first.** Everything works with no account and no database. Progress is
+  saved to `localStorage`.
+- **Optional accounts.** Add a database and a secret and learners can sign up to
+  sync progress across devices. Guest progress carries into the new account.
+- **Desktop and mobile.** Responsive throughout, with a bottom nav on small
+  screens and a distraction-free lesson player.
+
+## Stack
+
+| | |
+|---|---|
+| Framework | Next.js 16 (App Router) + React 19 |
+| Styling | Tailwind CSS v4 |
+| Database | Postgres via Prisma 7 (optional) |
+| Auth | Email + password, bcrypt hashes, signed JWT session cookie (`jose`) |
+| Deploy | Docker → Railway |
+
+## Running locally
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+That is enough — the app runs in local-only mode with accounts disabled.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+To work on accounts, point `DATABASE_URL` at a Postgres instance and set
+`AUTH_SECRET`, then apply migrations:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+cp .env.example .env   # fill in both values
+npm run db:deploy
+npm run dev
+```
 
-## Learn More
+Generate a secret with `openssl rand -base64 32`.
 
-To learn more about Next.js, take a look at the following resources:
+## Deploying to Railway
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+1. Create a project from this repo. Railway reads `railway.json` and builds the
+   `Dockerfile`; the healthcheck is `/api/health`.
+2. Deploy. It comes up immediately in local-only mode.
+3. To enable accounts, add a Postgres service, then set on the web service:
+   - `DATABASE_URL` = `${{Postgres.DATABASE_URL}}`
+   - `AUTH_SECRET` = a generated secret
+4. Redeploy. `scripts/start.sh` runs `prisma migrate deploy` on boot whenever
+   `DATABASE_URL` is present, so the schema applies itself.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+`PORT` is supplied by Railway and honoured by the start script.
 
-## Deploy on Vercel
+## How the learning engine works
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+A session is one day's goal (10 questions by default). The queue is built from
+cards that are due for review, topped up with new material, and worked through
+in chunks of five: new items are introduced, then that chunk is quizzed.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Scheduling is Leitner boxes with intervals of 0, 1, 2, 4, 8, 16 and 32 days. A
+correct answer moves a card up one box; a wrong answer moves it down two rather
+than back to zero, so one slip does not erase a well-known card. Cards reaching
+box 3 count as learned.
+
+Exercises escalate with the box: recognition (Japanese → English), then recall
+(English → Japanese), then listening and typing. Typed answers accept the
+English meaning, its listed alternates, and the romaji, ignoring case,
+punctuation, and leading articles.
+
+Audio uses the browser's own speech synthesis with a `ja-JP` voice. Where no
+Japanese voice is installed, listening exercises drop out of the rotation
+automatically.
+
+Content lives in `src/data/japanese.ts` — 202 items across 13 units (both kana
+syllabaries, core vocabulary, and survival phrases). Item ids are stable and
+progress is keyed on them, so never renumber an existing id.
+
+## Sync model
+
+The client is the source of truth while you study; the server stores a JSON
+blob per user. Pushes are debounced and **merged** rather than overwritten, so
+two devices used offline both keep their work: per card the more recently
+answered version wins, and counters take the higher value. Resetting progress
+sends `replace: true`, the one case that overwrites.
+
+Unknown or malformed progress is normalised on the way in (`normalizeProgress`),
+so a stale or hand-edited blob can never break the app.
+
+## Layout
+
+```
+src/
+  app/            routes — dashboard, /learn, /progress, /account, auth, /api
+  components/     app shell, session player, unit detail, UI primitives
+  data/           the Japanese deck
+  lib/            progress + SRS, session builder, store, auth, db, speech
+prisma/           schema and migrations
+scripts/start.sh  container entrypoint (migrate if configured, then serve)
+```
+
+## Notes
+
+- `npm audit` reports advisories in `mysql2` and `deepmerge-ts`. Both arrive
+  through the Prisma **CLI**, are never imported by the running app (this
+  project uses Postgres), and the offered fix downgrades Prisma to 6.x. Left
+  as-is deliberately.
+- The runtime image carries the full dependency tree so the Prisma CLI can run
+  migrations at boot. Trimming it is a straightforward later optimisation.
