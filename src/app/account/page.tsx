@@ -117,6 +117,30 @@ export default function AccountPage() {
             </span>
           </span>
         </label>
+
+        <label className="mt-4 flex cursor-pointer items-center gap-3">
+          <input
+            type="checkbox"
+            className="peer sr-only"
+            checked={ready ? progress.sound : true}
+            onChange={(e) =>
+              update((p) => ({
+                ...p,
+                sound: e.target.checked,
+                updatedAt: new Date().toISOString(),
+              }))
+            }
+          />
+          <span className="relative h-7 w-12 shrink-0 rounded-full bg-track transition peer-checked:bg-matcha peer-checked:[&>span]:translate-x-5 peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-matcha">
+            <span className="absolute top-1 left-1 h-5 w-5 rounded-full bg-surface shadow transition" />
+          </span>
+          <span className="min-w-0">
+            <span className="block text-sm font-bold">Sound</span>
+            <span className="block text-sm text-muted">
+              A short chime on a correct answer. Wrong answers stay silent.
+            </span>
+          </span>
+        </label>
       </Card>
 
       <Card>

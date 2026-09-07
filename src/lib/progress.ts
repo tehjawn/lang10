@@ -36,6 +36,8 @@ export type Progress = {
   dailyGoal: number;
   /** Advance automatically after a correct answer instead of waiting for a tap. */
   autoAdvance: boolean;
+  /** Play the chime on a correct answer. */
+  sound: boolean;
   /** YYYY-MM-DD → answers given that day. */
   history: Record<string, number>;
   cards: Record<string, CardState>;
@@ -69,6 +71,7 @@ export function createProgress(): Progress {
     lastGoalDate: null,
     dailyGoal: DEFAULT_DAILY_GOAL,
     autoAdvance: true,
+    sound: true,
     history: {},
     cards: {},
   };
@@ -110,6 +113,7 @@ export function normalizeProgress(input: unknown): Progress {
     lastGoalDate: typeof p.lastGoalDate === "string" ? p.lastGoalDate : null,
     dailyGoal: clamp(Math.trunc(Number(p.dailyGoal) || DEFAULT_DAILY_GOAL), 5, 50),
     autoAdvance: typeof p.autoAdvance === "boolean" ? p.autoAdvance : true,
+    sound: typeof p.sound === "boolean" ? p.sound : true,
     history,
     cards,
   };

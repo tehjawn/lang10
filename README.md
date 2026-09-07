@@ -121,6 +121,10 @@ Three defaults do most of the work of keeping the app quiet:
 - **Correct answers advance themselves** after a short beat, so a clean run
   costs one interaction per question instead of two. Wrong answers always wait:
   that is the screen worth reading. Turn it off under Account.
+- **A correct answer chimes.** A two-note rising fifth, synthesised with Web
+  Audio rather than shipped as a file. It is triggered from the grading gesture
+  itself, which is what satisfies browser autoplay rules. Wrong answers stay
+  silent — the sound is encouragement, not a verdict. Turn it off under Account.
 - **The home screen carries one decision.** The unit grid is collapsed behind a
   disclosure, and the account prompt waits until there is a streak or twenty
   items to protect — asking sooner is a decision with nothing behind it.

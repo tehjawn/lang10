@@ -13,6 +13,7 @@ import {
   type SessionPlan,
   type Step,
 } from "@/lib/session";
+import { playCorrect } from "@/lib/sound";
 import { isSpeechAvailable, whenVoicesReady } from "@/lib/speech";
 import { useProgress } from "@/lib/store";
 import { cx } from "@/components/ui";
@@ -92,11 +93,16 @@ export function SessionPlayer() {
           ? checkOrder(step.item, placed.map((i) => step.chunks[i]))
           : chosen?.id === step.item.id;
 
+    // Fired here rather than from an effect so it happens exactly once per
+    // answer, on the gesture that graded it — which is also what satisfies
+    // browser autoplay rules.
+    if (correct && progress.sound) playCorrect();
+
     setWasCorrect(correct);
     setPhase("feedback");
     setScore((s) => ({ correct: s.correct + (correct ? 1 : 0), total: s.total + 1 }));
     update((p) => applyAnswer(p, step.item.id, correct));
-  }, [step, typed, placed, chosen, update]);
+  }, [step, typed, placed, chosen, update, progress.sound]);
 
   const primary = useCallback(() => {
     if (!step) return;
