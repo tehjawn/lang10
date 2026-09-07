@@ -176,18 +176,3 @@ body {
   border-radius: 0.5rem;
 }
 
-@keyframes torii-glow {
-  0%, 100% { opacity: 0.55; transform: scale(1); }
-  50% { opacity: 1; transform: scale(1.18); }
-}
-
-.streak-glow::after {
-  content: "";
-  position: absolute;
-  inset: -4px;
-  border-radius: 9999px;
-  background: radial-gradient(circle, var(--torii) 0%, transparent 68%);
-  opacity: 0.5;
-  animation: torii-glow 2.6s ease-in-out infinite;
-  pointer-events: none;
-}

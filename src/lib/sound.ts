@@ -2,19 +2,36 @@
 
 /**
  * Feedback tones, synthesised rather than shipped as audio files — the app
- * already leans on the browser for Japanese speech, and a two-note chime costs
- * nothing to generate but a few kilobytes to download.
+ * already leans on the browser for Japanese speech, and a handful of short
+ * cues cost nothing to generate but a few kilobytes to download.
  *
- * The tone is a rising perfect fifth on a triangle wave: warm, short, and
- * pitched to sit under the interface rather than announce itself. It plays up
- * to ten times a session, so it is deliberately understated.
+ * Everything is built from the yo scale, the pentatonic that most Japanese
+ * folk music sits in, so the cues sound related to each other and to the
+ * subject. Levels are deliberately low: these play many times a session and
+ * should sit under the interface rather than announce themselves.
  */
 
-const NOTE_GAP_S = 0.075;
-const NOTE_LENGTH_S = 0.28;
-const PEAK_GAIN = 0.16;
-/** E5 then B5 — a fifth apart, which reads as resolved rather than merely loud. */
-const CORRECT_NOTES = [659.25, 987.77];
+/** Yo scale on D, plus the octave — the pool every cue draws from. */
+const D4 = 293.66;
+const A4 = 440.0;
+const D5 = 587.33;
+const E5 = 659.25;
+const G5 = 783.99;
+const A5 = 880.0;
+const B5 = 987.77;
+const D6 = 1174.66;
+/** Below the scale, used only for the softened "not quite". */
+const G4 = 392.0;
+const EB4 = 311.13;
+
+type Voice = {
+  freq: number;
+  /** Seconds after the cue starts. */
+  at: number;
+  length: number;
+  gain: number;
+  type?: OscillatorType;
+};
 
 let context: AudioContext | null = null;
 
@@ -46,48 +63,116 @@ export function isSoundAvailable(): boolean {
 }
 
 /**
- * Plays the correct-answer chime. Safe to call from anywhere: it is always
- * reached from a click or keypress, which is what lets the audio context start
- * under browser autoplay rules.
+ * Schedules a set of voices through one shared low-pass. Every failure path is
+ * swallowed: audio is a flourish and must never interfere with a lesson.
  */
-export function playCorrect() {
+function play(voices: Voice[], filterHz: number) {
   const ctx = getContext();
   if (!ctx) return;
 
-  // A context created before any gesture starts suspended, and stays that way
-  // until resumed. Calling this from a handler is what unblocks it.
+  // A context created before any gesture starts suspended and stays that way
+  // until resumed. Cues are always reached from a click or keypress, which is
+  // what lets this succeed.
   if (ctx.state === "suspended") void ctx.resume().catch(() => {});
 
   try {
-    // One shared filter per play takes the edge off the triangle's harmonics.
     const filter = ctx.createBiquadFilter();
     filter.type = "lowpass";
-    filter.frequency.value = 3200;
+    filter.frequency.value = filterHz;
     filter.connect(ctx.destination);
 
     const start = ctx.currentTime;
-    for (const [i, frequency] of CORRECT_NOTES.entries()) {
-      const at = start + i * NOTE_GAP_S;
+    let last: OscillatorNode | null = null;
+    let lastEnd = 0;
+
+    for (const voice of voices) {
+      const at = start + voice.at;
       const osc = ctx.createOscillator();
-      osc.type = "triangle";
-      osc.frequency.value = frequency;
+      osc.type = voice.type ?? "triangle";
+      osc.frequency.value = voice.freq;
 
       const gain = ctx.createGain();
-      // Ramp rather than switch on, so the note has no click at its edges.
+      // Ramped at both edges so notes have no click.
       gain.gain.setValueAtTime(0.0001, at);
-      gain.gain.linearRampToValueAtTime(PEAK_GAIN, at + 0.012);
-      gain.gain.exponentialRampToValueAtTime(0.0001, at + NOTE_LENGTH_S);
+      gain.gain.linearRampToValueAtTime(voice.gain, at + 0.012);
+      gain.gain.exponentialRampToValueAtTime(0.0001, at + voice.length);
 
       osc.connect(gain);
       gain.connect(filter);
       osc.start(at);
-      osc.stop(at + NOTE_LENGTH_S + 0.02);
-      // Nodes are collected once stopped; drop the filter with the last note.
-      if (i === CORRECT_NOTES.length - 1) {
-        osc.onended = () => filter.disconnect();
+      osc.stop(at + voice.length + 0.02);
+
+      if (voice.at + voice.length >= lastEnd) {
+        lastEnd = voice.at + voice.length;
+        last = osc;
       }
     }
+
+    // Nodes are collected once stopped; release the filter with the last voice.
+    if (last) last.onended = () => filter.disconnect();
   } catch {
-    // Audio is a flourish — never let it break answering a question.
+    // Ignore — a missing chime is never worth breaking a lesson over.
   }
+}
+
+/** A rising fifth. Reads as resolved rather than merely loud. */
+export function playCorrect() {
+  play(
+    [
+      { freq: E5, at: 0, length: 0.28, gain: 0.16 },
+      { freq: B5, at: 0.075, length: 0.28, gain: 0.16 },
+    ],
+    3200,
+  );
+}
+
+/**
+ * A falling minor third on a sine, filtered down and quieter than the correct
+ * chime. This is a shrug, not a buzzer — the feedback panel already carries the
+ * correction, and the sound only needs to mark that something changed.
+ */
+export function playWrong() {
+  play(
+    [
+      { freq: G4, at: 0, length: 0.34, gain: 0.13, type: "sine" },
+      { freq: EB4, at: 0.085, length: 0.44, gain: 0.12, type: "sine" },
+    ],
+    1400,
+  );
+}
+
+/**
+ * The daily goal. A pentatonic run up to a held octave over a soft root and
+ * fifth, so it lands as a small piece of music rather than a jingle.
+ */
+export function playCelebrate() {
+  play(
+    [
+      { freq: D4, at: 0, length: 1.3, gain: 0.07, type: "sine" },
+      { freq: A4, at: 0.02, length: 1.25, gain: 0.05, type: "sine" },
+      { freq: D5, at: 0, length: 0.5, gain: 0.12 },
+      { freq: E5, at: 0.07, length: 0.5, gain: 0.12 },
+      { freq: G5, at: 0.14, length: 0.5, gain: 0.12 },
+      { freq: A5, at: 0.21, length: 0.5, gain: 0.12 },
+      { freq: B5, at: 0.28, length: 0.5, gain: 0.12 },
+      { freq: D6, at: 0.36, length: 1.1, gain: 0.15 },
+    ],
+    4200,
+  );
+}
+
+/**
+ * Finishing an extra set once the goal is already met. The same shape as the
+ * celebration but three notes and no pad, so repeat practice is acknowledged
+ * without pretending it is the main event.
+ */
+export function playFlourish() {
+  play(
+    [
+      { freq: D5, at: 0, length: 0.4, gain: 0.12 },
+      { freq: G5, at: 0.07, length: 0.4, gain: 0.12 },
+      { freq: A5, at: 0.14, length: 0.55, gain: 0.13 },
+    ],
+    3400,
+  );
 }

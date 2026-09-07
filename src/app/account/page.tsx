@@ -137,7 +137,7 @@ export default function AccountPage() {
           <span className="min-w-0">
             <span className="block text-sm font-bold">Sound</span>
             <span className="block text-sm text-muted">
-              A short chime on a correct answer. Wrong answers stay silent.
+              Quiet chimes as you answer, and a short piece when you finish the day.
             </span>
           </span>
         </label>

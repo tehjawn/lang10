@@ -1,9 +1,10 @@
 "use client";
 
 import { motion } from "motion/react";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { answeredToday, completeDay } from "@/lib/progress";
 import type { SessionPlan } from "@/lib/session";
+import { playCelebrate, playFlourish } from "@/lib/sound";
 import { useProgress } from "@/lib/store";
 import { ButtonLink, SPRING } from "@/components/ui";
 import { HankoStamp } from "./hanko-stamp";
@@ -17,11 +18,28 @@ export function SessionSummary({
 }) {
   const { progress, update } = useProgress();
   const goalMet = answeredToday(progress) >= progress.dailyGoal;
+  const soundOn = progress.sound;
 
   // Roll the streak forward exactly once, the first time today's goal is met.
   useEffect(() => {
     if (goalMet) update(completeDay);
   }, [goalMet, update]);
+
+  // The cue plays once on arrival, timed to land with the stamp rather than
+  // ahead of it. The guard stops the streak update from retriggering it, and
+  // the cleanup releases the guard as well as the timer — otherwise a
+  // cancelled run (React runs effects twice in development) would set the flag,
+  // clear its own timer, and leave nothing able to schedule the sound again.
+  const sounded = useRef(false);
+  useEffect(() => {
+    if (sounded.current || !soundOn) return;
+    sounded.current = true;
+    const id = window.setTimeout(goalMet ? playCelebrate : playFlourish, 240);
+    return () => {
+      window.clearTimeout(id);
+      sounded.current = false;
+    };
+  }, [goalMet, soundOn]);
 
   const accuracy = score.total ? Math.round((score.correct / score.total) * 100) : 0;
   const xp = score.correct * 10 + (score.total - score.correct) * 2;

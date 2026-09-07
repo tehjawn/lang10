@@ -13,7 +13,7 @@ import {
   type SessionPlan,
   type Step,
 } from "@/lib/session";
-import { playCorrect } from "@/lib/sound";
+import { playCorrect, playWrong } from "@/lib/sound";
 import { isSpeechAvailable, whenVoicesReady } from "@/lib/speech";
 import { useProgress } from "@/lib/store";
 import { cx } from "@/components/ui";
@@ -96,7 +96,7 @@ export function SessionPlayer() {
     // Fired here rather than from an effect so it happens exactly once per
     // answer, on the gesture that graded it — which is also what satisfies
     // browser autoplay rules.
-    if (correct && progress.sound) playCorrect();
+    if (progress.sound) (correct ? playCorrect : playWrong)();
 
     setWasCorrect(correct);
     setPhase("feedback");

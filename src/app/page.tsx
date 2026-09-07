@@ -6,12 +6,39 @@ import { useState } from "react";
 import { UNITS } from "@/data/japanese";
 import { answeredToday, overallStats, unitStats } from "@/lib/progress";
 import { useProgress } from "@/lib/store";
-import { Bar, ButtonLink, Card, Ring, SPRING, Stat, ToriiMark } from "@/components/ui";
+import { useOccasional } from "@/lib/use-occasional";
+import {
+  Bar,
+  ButtonLink,
+  Card,
+  PulseHalo,
+  Ring,
+  SPRING,
+  Stat,
+  ToriiMark,
+} from "@/components/ui";
 
 const UNITS_OPEN_KEY = "lang10.unitsOpen";
 
 export default function DashboardPage() {
   const { progress, ready, user, accountsEnabled } = useProgress();
+  const stats0 = ready ? overallStats(progress) : null;
+  // Each of these runs on its own jittered clock, so nothing pulses in unison.
+  const streakTick = useOccasional({
+    minMs: 10_000,
+    maxMs: 18_000,
+    enabled: ready && progress.streak > 0,
+  });
+  const dueTick = useOccasional({
+    minMs: 13_000,
+    maxMs: 23_000,
+    enabled: ready && (stats0?.due ?? 0) > 0,
+  });
+  const ringTick = useOccasional({
+    minMs: 11_000,
+    maxMs: 20_000,
+    enabled: ready && answeredToday(progress) >= progress.dailyGoal,
+  });
   // Remembered so someone who browses units does not have to reopen the list
   // every time they come back. Read lazily rather than in an effect: this
   // screen renders a skeleton until the store hydrates, so the units section is
@@ -56,12 +83,15 @@ export default function DashboardPage() {
     >
       <Rise>
         <Card className="flex flex-col items-center gap-6 sm:flex-row sm:gap-8">
-          <Ring value={done} max={goal}>
-            <div>
-              <div className="text-3xl font-extrabold tabular-nums">{Math.min(done, goal)}</div>
-              <div className="text-xs font-bold text-muted">of {goal}</div>
-            </div>
-          </Ring>
+          <div className="relative grid place-items-center">
+            {goalMet && <PulseHalo tick={ringTick} tone="matcha" className="rounded-full" />}
+            <Ring value={done} max={goal}>
+              <div>
+                <div className="text-3xl font-extrabold tabular-nums">{Math.min(done, goal)}</div>
+                <div className="text-xs font-bold text-muted">of {goal}</div>
+              </div>
+            </Ring>
+          </div>
 
           <div className="flex-1 text-center sm:text-left">
             <h1 className="text-2xl font-extrabold tracking-tight text-balance sm:text-3xl">
@@ -99,14 +129,29 @@ export default function DashboardPage() {
             label="Streak"
             value={
               <span className="inline-flex items-center gap-1.5 text-torii">
-                <ToriiMark className="h-5 w-5" />
+                <span className="relative grid place-items-center">
+                  {progress.streak > 0 && <PulseHalo tick={streakTick} />}
+                  <ToriiMark className="relative h-5 w-5" />
+                </span>
                 {progress.streak}
               </span>
             }
           />
           <Stat label="XP" value={progress.xp.toLocaleString()} />
           <Stat label="Learned" value={`${stats.learned}/${stats.total}`} />
-          <Stat label="Due now" value={stats.due} />
+          <Stat
+            label="Due now"
+            value={
+              <motion.span
+                key={dueTick}
+                className="inline-block tabular-nums"
+                animate={stats.due > 0 ? { scale: [1, 1.14, 1] } : { scale: 1 }}
+                transition={{ duration: 0.55, ease: "easeOut" }}
+              >
+                {stats.due}
+              </motion.span>
+            }
+          />
         </div>
       </Rise>
 
