@@ -3,6 +3,7 @@ import { Nunito } from "next/font/google";
 import "./globals.css";
 import { AppShell } from "@/components/app-shell";
 import { Motion } from "@/components/motion-provider";
+import { THEME_BOOT_SCRIPT } from "@/components/theme";
 import { ProgressProvider } from "@/lib/store";
 
 const nunito = Nunito({
@@ -24,16 +25,16 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#fdfbf7" },
-    { media: "(prefers-color-scheme: dark)", color: "#1a1a1a" },
-  ],
+  // Dark is the default; the boot script rewrites this when light is stored.
+  themeColor: "#1a1a1a",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={nunito.variable}>
+    <html lang="en" className={nunito.variable} data-theme="dark" suppressHydrationWarning>
       <head>
+        {/* Must run before first paint, otherwise light users see a dark flash. */}
+        <script dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT }} />
         {/*
           Zen Maru Gothic is loaded from Google rather than next/font: next/font
           only exposes this family's latin subsets, which would silently drop

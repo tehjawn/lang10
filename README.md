@@ -108,6 +108,23 @@ Content lives in `src/data/japanese.ts` — 202 items across 13 units (both kana
 syllabaries, core vocabulary, and survival phrases). Item ids are stable and
 progress is keyed on them, so never renumber an existing id.
 
+## Interaction defaults
+
+Three defaults do most of the work of keeping the app quiet:
+
+- **Dark by default.** The ink palette sits on bare `:root` and light is the
+  override, so a visitor with JavaScript disabled still gets dark rather than a
+  flash of white. A boot script in `<head>` applies the stored choice before
+  first paint. The toggle holds no React state — which icon shows is decided by
+  CSS from the `data-theme` attribute, so there is nothing to mismatch on
+  hydration.
+- **Correct answers advance themselves** after a short beat, so a clean run
+  costs one interaction per question instead of two. Wrong answers always wait:
+  that is the screen worth reading. Turn it off under Account.
+- **The home screen carries one decision.** The unit grid is collapsed behind a
+  disclosure, and the account prompt waits until there is a streak or twenty
+  items to protect — asking sooner is a decision with nothing behind it.
+
 ## Sync model
 
 The client is the source of truth while you study; the server stores a JSON

@@ -1,23 +1,43 @@
 @import "tailwindcss";
 
-/*
- * Lang10 — "Warm Modernism × Japanese Minimalism".
- *
- * Light mode is rice paper under ink; dark mode is ink with the paper's warmth
- * carried into the text. Only token values change between the two, so every
- * component stays theme-agnostic.
- *
- * Matcha is the single action colour. Torii red is the single attention colour:
- * it marks streaks, the hanko stamp, and wrong answers alike. Those never share
- * a screen, and each carries its own iconography, so one red stays legible.
- */
 :root {
+  /*
+   * Dark is the default, so the ink palette lives on bare :root and the paper
+   * palette is the override. A no-JS visitor therefore still gets dark rather
+   * than a flash of white.
+   */
+  --paper: #1a1a1a;
+  --paper-alt: #141414;
+  --surface: #232323;
+  --surface-2: #2b2a28;
+  --border: #383735;
+  /* Deeper edge used for the 4px lip under tactile controls. */
+  --border-strong: #4a4845;
+  --ink: #f5f1e8;
+  --muted: #a49c8f;
+
+  --matcha: #4caf50;
+  --matcha-hover: #5cbb60;
+  --matcha-deep: #2f7233;
+  --matcha-soft: #1b2a1c;
+
+  --torii: #ff5a55;
+  --torii-deep: #a5322f;
+  --torii-soft: #2e1817;
+
+  --on-brand: #10240f;
+  --track: #383735;
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.4);
+
+  color-scheme: dark;
+}
+
+:root[data-theme="light"] {
   --paper: #fdfbf7;
   --paper-alt: #f5f1e8;
   --surface: #ffffff;
   --surface-2: #faf7f1;
   --border: #e9e2d6;
-  /* Deeper edge used for the 4px lip under tactile controls. */
   --border-strong: #d8cfbe;
   --ink: #1a1a1a;
   --muted: #6e675c;
@@ -34,32 +54,8 @@
   --on-brand: #ffffff;
   --track: #e9e2d6;
   --shadow-card: 0 1px 2px rgb(26 26 26 / 0.05), 0 8px 24px -16px rgb(26 26 26 / 0.18);
-}
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --paper: #1a1a1a;
-    --paper-alt: #141414;
-    --surface: #232323;
-    --surface-2: #2b2a28;
-    --border: #383735;
-    --border-strong: #4a4845;
-    --ink: #f5f1e8;
-    --muted: #a49c8f;
-
-    --matcha: #4caf50;
-    --matcha-hover: #5cbb60;
-    --matcha-deep: #2f7233;
-    --matcha-soft: #1b2a1c;
-
-    --torii: #ff5a55;
-    --torii-deep: #a5322f;
-    --torii-soft: #2e1817;
-
-    --on-brand: #10240f;
-    --track: #383735;
-    --shadow-card: 0 1px 2px rgb(0 0 0 / 0.4);
-  }
+  color-scheme: light;
 }
 
 @theme inline {
@@ -88,10 +84,6 @@
   --font-jp: "Zen Maru Gothic", "Hiragino Maru Gothic ProN", "Yu Gothic", "Noto Sans JP", sans-serif;
 
   --shadow-card: var(--shadow-card);
-}
-
-html {
-  color-scheme: light dark;
 }
 
 body {
@@ -140,6 +132,41 @@ body {
   .tactile:active:not(:disabled) {
     transform: none;
   }
+}
+
+/*
+ * Colour transitions are enabled only while a theme switch is in flight, so
+ * the swap glides without every hover state inheriting a transition.
+ */
+:root.theme-switching,
+:root.theme-switching *,
+:root.theme-switching *::before,
+:root.theme-switching *::after {
+  transition:
+    background-color 220ms ease,
+    border-color 220ms ease,
+    color 220ms ease,
+    fill 220ms ease !important;
+}
+
+/*
+ * The theme button stacks both icons and lets the active theme decide which is
+ * visible, so the control needs no React state and cannot mismatch on hydration.
+ * Dark shows the sun (what a tap gives you); light shows the moon.
+ */
+.theme-icon {
+  display: grid;
+  place-items: center;
+  transition:
+    opacity 200ms ease,
+    transform 260ms ease;
+}
+
+:root[data-theme="dark"] .theme-icon-moon,
+:root[data-theme="light"] .theme-icon-sun {
+  opacity: 0;
+  transform: rotate(65deg) scale(0.5);
+  pointer-events: none;
 }
 
 /* Focus ring that reads on both paper and ink. */

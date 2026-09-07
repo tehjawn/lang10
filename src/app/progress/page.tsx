@@ -2,15 +2,7 @@
 
 import Link from "next/link";
 import { UNITS } from "@/data/japanese";
-import {
-  BOX_INTERVALS,
-  LEARNED_BOX,
-  MAX_BOX,
-  addDays,
-  overallStats,
-  todayKey,
-  unitStats,
-} from "@/lib/progress";
+import { addDays, masteryCounts, overallStats, todayKey, unitStats } from "@/lib/progress";
 import { useProgress } from "@/lib/store";
 import { Bar, ButtonLink, Card, Stat, ToriiMark, cx } from "@/components/ui";
 
@@ -24,9 +16,7 @@ export default function ProgressPage() {
   }
 
   const stats = overallStats(progress);
-  const boxCounts = Array.from({ length: MAX_BOX + 1 }, (_, box) =>
-    Object.values(progress.cards).filter((c) => c.box === box).length,
-  );
+  const bands = masteryCounts(progress);
 
   return (
     <div className="space-y-5">
@@ -54,25 +44,20 @@ export default function ProgressPage() {
       </Card>
 
       <Card>
-        <h2 className="text-sm font-bold tracking-wide text-muted uppercase">
-          Memory strength
+        <h2 className="text-sm font-extrabold tracking-wide text-muted uppercase">
+          How well you know them
         </h2>
         <p className="mt-1 text-sm text-muted">
-          Cards move up a box each time you get them right, and come back after longer gaps.
+          Items climb as you get them right, and come back after longer gaps.
         </p>
-        <div className="mt-4 space-y-2">
-          {boxCounts.map((count, box) => (
-            <div key={box} className="flex items-center gap-3 text-sm">
-              <span
-                className={cx(
-                  "w-24 shrink-0 font-semibold",
-                  box >= LEARNED_BOX ? "text-matcha" : "text-muted",
-                )}
-              >
-                {box === 0 ? "New" : `${BOX_INTERVALS[box]}-day`}
+        <div className="mt-4 space-y-3">
+          {bands.map((band) => (
+            <div key={band.label} className="flex items-center gap-3 text-sm">
+              <span className="w-20 shrink-0 font-extrabold">{band.label}</span>
+              <Bar pct={stats.started ? band.count / stats.started : 0} className="flex-1" />
+              <span className="w-8 shrink-0 text-right font-bold tabular-nums text-muted">
+                {band.count}
               </span>
-              <Bar pct={stats.started ? count / stats.started : 0} className="flex-1" />
-              <span className="w-8 shrink-0 text-right tabular-nums text-muted">{count}</span>
             </div>
           ))}
         </div>

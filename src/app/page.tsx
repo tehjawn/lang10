@@ -1,14 +1,40 @@
 "use client";
 
 import Link from "next/link";
-import { motion } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
+import { useState } from "react";
 import { UNITS } from "@/data/japanese";
 import { answeredToday, overallStats, unitStats } from "@/lib/progress";
 import { useProgress } from "@/lib/store";
 import { Bar, ButtonLink, Card, Ring, SPRING, Stat, ToriiMark } from "@/components/ui";
 
+const UNITS_OPEN_KEY = "lang10.unitsOpen";
+
 export default function DashboardPage() {
   const { progress, ready, user, accountsEnabled } = useProgress();
+  // Remembered so someone who browses units does not have to reopen the list
+  // every time they come back. Read lazily rather than in an effect: this
+  // screen renders a skeleton until the store hydrates, so the units section is
+  // absent from the server HTML and cannot mismatch.
+  const [unitsOpen, setUnitsOpen] = useState(() => {
+    if (typeof window === "undefined") return false;
+    try {
+      return window.localStorage.getItem(UNITS_OPEN_KEY) === "1";
+    } catch {
+      return false;
+    }
+  });
+
+  const toggleUnits = () => {
+    setUnitsOpen((open) => {
+      try {
+        window.localStorage.setItem(UNITS_OPEN_KEY, open ? "0" : "1");
+      } catch {
+        // Ignore; the choice just will not persist.
+      }
+      return !open;
+    });
+  };
 
   if (!ready) return <DashboardSkeleton />;
 
@@ -17,6 +43,9 @@ export default function DashboardPage() {
   const stats = overallStats(progress);
   const goalMet = done >= goal;
   const started = stats.started > 0;
+  // Asking someone to make an account before they have any progress is a
+  // decision with nothing behind it, so the prompt waits until there is.
+  const worthSaving = progress.streak >= 2 || stats.started >= 20;
 
   return (
     <motion.div
@@ -81,7 +110,7 @@ export default function DashboardPage() {
         </div>
       </Rise>
 
-      {accountsEnabled && !user && started && (
+      {accountsEnabled && !user && worthSaving && (
         <Rise>
           <SaveProgressNudge />
         </Rise>
@@ -89,40 +118,73 @@ export default function DashboardPage() {
 
       <section>
         <Rise>
-          <h2 className="mb-3 px-1 text-sm font-extrabold tracking-wide text-muted uppercase">
-            Units
-          </h2>
+          <button
+            type="button"
+            onClick={toggleUnits}
+            aria-expanded={unitsOpen}
+            className="flex w-full items-center gap-3 rounded-2xl border border-border bg-surface px-4 py-3.5 text-left shadow-card transition hover:bg-surface-2"
+          >
+            <div className="min-w-0 flex-1">
+              <div className="text-sm font-extrabold">Browse units</div>
+              <div className="text-xs text-muted">
+                {UNITS.length} units · {stats.learned} of {stats.total} items learned
+              </div>
+            </div>
+            <motion.span
+              animate={{ rotate: unitsOpen ? 180 : 0 }}
+              transition={SPRING}
+              className="text-muted"
+              aria-hidden
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="m6 9 6 6 6-6" />
+              </svg>
+            </motion.span>
+          </button>
         </Rise>
-        <div className="grid gap-3 sm:grid-cols-2">
-          {UNITS.map((unit) => {
-            const u = unitStats(progress, unit.id);
-            return (
-              <Rise key={unit.id}>
-                <motion.div whileHover={{ y: -3 }} transition={SPRING}>
-                  <Link
-                    href={`/unit/${unit.id}`}
-                    className="block rounded-2xl border border-border border-b-4 border-b-border-strong bg-surface p-4 shadow-card transition hover:bg-surface-2"
-                  >
-                    <div className="flex items-center gap-3">
-                      <span className="jp grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-matcha-soft text-xl text-matcha">
-                        {unit.emoji}
-                      </span>
-                      <div className="min-w-0 flex-1">
-                        <div className="truncate font-extrabold">{unit.title}</div>
-                        <div className="truncate text-xs text-muted">{unit.subtitle}</div>
-                      </div>
-                      <div className="text-right text-xs font-bold tabular-nums text-muted">
-                        {u.learned}/{u.total}
-                      </div>
-                    </div>
-                    <Bar pct={u.pct} className="mt-3" />
-                  </Link>
-                </motion.div>
-              </Rise>
-            );
-          })}
-        </div>
+
+        <AnimatePresence initial={false}>
+          {unitsOpen && (
+            <motion.div
+              key="units"
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+              className="overflow-hidden"
+            >
+              <div className="grid gap-3 pt-3 sm:grid-cols-2">
+                {UNITS.map((unit) => {
+                  const u = unitStats(progress, unit.id);
+                  return (
+                    <motion.div key={unit.id} whileHover={{ y: -3 }} transition={SPRING}>
+                      <Link
+                        href={`/unit/${unit.id}`}
+                        className="block rounded-2xl border border-border border-b-4 border-b-border-strong bg-surface p-4 shadow-card transition hover:bg-surface-2"
+                      >
+                        <div className="flex items-center gap-3">
+                          <span className="jp grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-matcha-soft text-xl text-matcha">
+                            {unit.emoji}
+                          </span>
+                          <div className="min-w-0 flex-1">
+                            <div className="truncate font-extrabold">{unit.title}</div>
+                            <div className="truncate text-xs text-muted">{unit.subtitle}</div>
+                          </div>
+                          <div className="text-right text-xs font-bold tabular-nums text-muted">
+                            {u.learned}/{u.total}
+                          </div>
+                        </div>
+                        <Bar pct={u.pct} className="mt-3" />
+                      </Link>
+                    </motion.div>
+                  );
+                })}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </section>
+
     </motion.div>
   );
 }

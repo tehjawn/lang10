@@ -88,6 +88,38 @@ export default function AccountPage() {
       </Card>
 
       <Card>
+        <h2 className="font-bold">During a lesson</h2>
+        <label className="mt-3 flex cursor-pointer items-center gap-3">
+          <input
+            type="checkbox"
+            className="peer sr-only"
+            checked={ready ? progress.autoAdvance : true}
+            onChange={(e) =>
+              update((p) => ({
+                ...p,
+                autoAdvance: e.target.checked,
+                updatedAt: new Date().toISOString(),
+              }))
+            }
+          />
+          {/*
+            The knob is a descendant, not a sibling, so it cannot use
+            `peer-checked:` directly — the peer variant compiles to a sibling
+            combinator. Target it from the track instead.
+          */}
+          <span className="relative h-7 w-12 shrink-0 rounded-full bg-track transition peer-checked:bg-matcha peer-checked:[&>span]:translate-x-5 peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-matcha">
+            <span className="absolute top-1 left-1 h-5 w-5 rounded-full bg-surface shadow transition" />
+          </span>
+          <span className="min-w-0">
+            <span className="block text-sm font-bold">Continue automatically</span>
+            <span className="block text-sm text-muted">
+              Move on by itself after a correct answer. Wrong answers always wait.
+            </span>
+          </span>
+        </label>
+      </Card>
+
+      <Card>
         <h2 className="font-bold">Your data</h2>
         <p className="mt-1 text-sm text-muted">
           {stats

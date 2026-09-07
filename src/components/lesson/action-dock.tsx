@@ -7,7 +7,14 @@ import { AudioButton } from "./audio-button";
 
 export type DockState =
   | { phase: "answering"; canSubmit: boolean }
-  | { phase: "feedback"; correct: boolean; item: Item; canListen: boolean }
+  | {
+      phase: "feedback";
+      correct: boolean;
+      item: Item;
+      canListen: boolean;
+      /** When set, the step advances itself after this long. */
+      autoAdvanceMs?: number;
+    }
   | { phase: "teach"; item: Item };
 
 /**
@@ -21,6 +28,7 @@ export function ActionDock({ state, onPrimary }: { state: DockState; onPrimary: 
 
   const disabled = state.phase === "answering" && !state.canSubmit;
   const tone = state.phase === "feedback" && !state.correct ? "torii" : "matcha";
+  const autoMs = state.phase === "feedback" ? state.autoAdvanceMs : undefined;
 
   return (
     <div className="sticky bottom-0 z-20 mt-auto">
@@ -94,17 +102,29 @@ export function ActionDock({ state, onPrimary }: { state: DockState; onPrimary: 
           <Button
             variant={tone}
             size="xl"
-            className="w-full"
+            className="relative w-full overflow-hidden"
             onClick={onPrimary}
             disabled={disabled}
           >
-            {label}
+            {/* Shows the wait elapsing so an automatic advance is never a surprise. */}
+            {autoMs !== undefined && (
+              <motion.span
+                aria-hidden
+                className="absolute inset-y-0 left-0 bg-white/20"
+                initial={{ width: "0%" }}
+                animate={{ width: "100%" }}
+                transition={{ duration: autoMs / 1000, ease: "linear" }}
+              />
+            )}
+            <span className="relative">{label}</span>
           </Button>
         </div>
         <p className="mx-auto mt-2 hidden max-w-xl text-center text-xs text-muted sm:block">
           {state.phase === "answering"
             ? "Press 1–9 to choose · Enter to check"
-            : "Press Enter to continue"}
+            : autoMs !== undefined
+              ? "Continuing automatically · Enter to skip ahead"
+              : "Press Enter to continue"}
         </p>
       </div>
     </div>

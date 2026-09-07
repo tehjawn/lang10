@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { motion } from "motion/react";
 import { answeredToday } from "@/lib/progress";
 import { useProgress } from "@/lib/store";
+import { ThemeToggle } from "./theme";
 import { SPRING, ToriiMark, cx } from "./ui";
 
 const NAV = [
@@ -93,6 +94,7 @@ function Header({ pathname }: { pathname: string }) {
           >
             {ready ? `${done}/${progress.dailyGoal}` : "–"}
           </span>
+          <ThemeToggle />
         </div>
       </div>
     </header>

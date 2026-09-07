@@ -24,6 +24,13 @@ import { SessionSummary } from "./session-summary";
 
 type Phase = "answering" | "feedback";
 
+/**
+ * How long a correct answer stays on screen before the session moves on. Long
+ * enough to register the green and glance at the reading, short enough that a
+ * clean run costs one interaction per question instead of two.
+ */
+const AUTO_ADVANCE_MS = 1100;
+
 const PROMPTS: Record<Exclude<Step["kind"], "teach">, string> = {
   recognize: "What does this mean?",
   recall: "Which one is this?",
@@ -44,6 +51,7 @@ export function SessionPlayer() {
   const [score, setScore] = useState({ correct: 0, total: 0 });
   const [canListen, setCanListen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const advanceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => whenVoicesReady(() => setCanListen(isSpeechAvailable())), []);
 
@@ -62,6 +70,12 @@ export function SessionPlayer() {
   }, [step, phase]);
 
   const next = useCallback(() => {
+    // Cancelling synchronously is what makes a manual tap safe during an
+    // automatic advance: whichever happens first disarms the other.
+    if (advanceTimer.current) {
+      clearTimeout(advanceTimer.current);
+      advanceTimer.current = null;
+    }
     setPhase("answering");
     setChosen(null);
     setTyped("");
@@ -89,6 +103,22 @@ export function SessionPlayer() {
     if (step.kind === "teach" || phase === "feedback") return next();
     if (canSubmit(step, { chosen, typed, placed })) submit();
   }, [step, phase, chosen, typed, placed, next, submit]);
+
+  // A correct answer needs no acknowledgement, so it moves on by itself. A
+  // wrong one always waits — that is the screen worth reading.
+  const autoAdvancing =
+    phase === "feedback" && wasCorrect && progress.autoAdvance && step?.kind !== "teach";
+
+  useEffect(() => {
+    if (!autoAdvancing) return;
+    advanceTimer.current = setTimeout(next, AUTO_ADVANCE_MS);
+    return () => {
+      if (advanceTimer.current) {
+        clearTimeout(advanceTimer.current);
+        advanceTimer.current = null;
+      }
+    };
+  }, [autoAdvancing, index, next]);
 
   /** Number keys pick an option, or place the next piece in an ordering task. */
   const pickByNumber = useCallback(
@@ -140,9 +170,15 @@ export function SessionPlayer() {
     if (!step) return null;
     if (step.kind === "teach") return { phase: "teach", item: step.item };
     if (phase === "feedback")
-      return { phase: "feedback", correct: wasCorrect, item: step.item, canListen };
+      return {
+        phase: "feedback",
+        correct: wasCorrect,
+        item: step.item,
+        canListen,
+        ...(autoAdvancing ? { autoAdvanceMs: AUTO_ADVANCE_MS } : {}),
+      };
     return { phase: "answering", canSubmit: canSubmit(step, { chosen, typed, placed }) };
-  }, [step, phase, wasCorrect, canListen, chosen, typed, placed]);
+  }, [step, phase, wasCorrect, canListen, chosen, typed, placed, autoAdvancing]);
 
   if (!ready || !plan) return <LoadingSession />;
   if (finished) return <SessionSummary score={score} plan={plan} />;

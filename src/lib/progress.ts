@@ -34,6 +34,8 @@ export type Progress = {
   /** Local day of the last session that met the daily goal. */
   lastGoalDate: string | null;
   dailyGoal: number;
+  /** Advance automatically after a correct answer instead of waiting for a tap. */
+  autoAdvance: boolean;
   /** YYYY-MM-DD → answers given that day. */
   history: Record<string, number>;
   cards: Record<string, CardState>;
@@ -66,6 +68,7 @@ export function createProgress(): Progress {
     bestStreak: 0,
     lastGoalDate: null,
     dailyGoal: DEFAULT_DAILY_GOAL,
+    autoAdvance: true,
     history: {},
     cards: {},
   };
@@ -106,6 +109,7 @@ export function normalizeProgress(input: unknown): Progress {
     bestStreak: Math.max(0, Math.trunc(Number(p.bestStreak) || 0)),
     lastGoalDate: typeof p.lastGoalDate === "string" ? p.lastGoalDate : null,
     dailyGoal: clamp(Math.trunc(Number(p.dailyGoal) || DEFAULT_DAILY_GOAL), 5, 50),
+    autoAdvance: typeof p.autoAdvance === "boolean" ? p.autoAdvance : true,
     history,
     cards,
   };
@@ -216,6 +220,25 @@ export function unitStats(p: Progress, unitId: string) {
     if (c.box >= LEARNED_BOX) learned++;
   }
   return { total: items.length, started, learned, pct: items.length ? learned / items.length : 0 };
+}
+
+/**
+ * Plain-language mastery bands. Learners do not need to reason about Leitner
+ * boxes or interval lengths to read their own progress.
+ */
+export const MASTERY_BANDS = [
+  { label: "New", boxes: [0], hint: "Just met" },
+  { label: "Learning", boxes: [1, 2], hint: "Back within days" },
+  { label: "Familiar", boxes: [3, 4], hint: "Back within weeks" },
+  { label: "Known", boxes: [5, 6], hint: "Back within a month" },
+] as const;
+
+export function masteryCounts(p: Progress) {
+  const cards = Object.values(p.cards);
+  return MASTERY_BANDS.map((band) => ({
+    ...band,
+    count: cards.filter((c) => (band.boxes as readonly number[]).includes(c.box)).length,
+  }));
 }
 
 export function overallStats(p: Progress) {
