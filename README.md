@@ -59,6 +59,19 @@ boots, reports itself healthy in the logs, and still answers every request with
 a 502. Setting it explicitly keeps the domain, `EXPOSE`, and the start script in
 agreement.
 
+### Continuous deployment
+
+The `lang10` service is connected to `tehjawn/lang10` with a single deployment
+trigger on `main`, so pushes to that branch deploy automatically. Project-level
+PR deploys are off, so pull requests and other branches never deploy.
+
+Railway needs the GitHub App installed on the repo before a trigger can exist —
+without it, setting the service source appears to succeed but silently creates
+no trigger, and nothing ever auto-deploys.
+
+To deploy from a working copy instead, `railway up` still works and bypasses the
+trigger entirely.
+
 ### Using Supabase for the database
 
 Supabase's direct host (`db.<ref>.supabase.co`) resolves to IPv6 only, which
