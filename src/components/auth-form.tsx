@@ -26,7 +26,7 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
           This deployment has no database configured, so progress is saved in this browser only.
           Everything else works normally.
         </p>
-        <Link href="/" className="mt-4 inline-block font-semibold text-accent">
+        <Link href="/" className="mt-4 inline-block font-semibold text-matcha">
           Back to today
         </Link>
       </Card>
@@ -109,7 +109,7 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
         </Field>
 
         {error && (
-          <p role="alert" className="rounded-lg bg-danger-soft px-3 py-2 text-sm text-danger">
+          <p role="alert" className="rounded-lg bg-torii-soft px-3 py-2 text-sm text-torii">
             {error}
           </p>
         )}
@@ -121,7 +121,7 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
 
       <p className="mt-4 text-center text-sm text-muted">
         {isSignup ? "Already have an account? " : "New to Lang10? "}
-        <Link href={isSignup ? "/login" : "/signup"} className="font-semibold text-accent">
+        <Link href={isSignup ? "/login" : "/signup"} className="font-semibold text-matcha">
           {isSignup ? "Sign in" : "Create one"}
         </Link>
       </p>
@@ -130,7 +130,7 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
 }
 
 const INPUT =
-  "w-full rounded-xl border-2 border-border bg-surface px-3.5 py-3 outline-none transition focus:border-accent";
+  "w-full rounded-xl border-2 border-border bg-surface px-3.5 py-3 outline-none transition focus:border-matcha";
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (

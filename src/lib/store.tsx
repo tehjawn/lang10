@@ -58,13 +58,21 @@ function subscribe(listener: () => void) {
   };
 }
 
-/** Must stay referentially stable between writes, hence the cached snapshot. */
-function getSnapshot(): Progress | null {
-  if (snapshot === null) snapshot = readLocal();
-  return snapshot;
-}
-
+/**
+ * Returns null until `hydrate()` has run. Both this and the server snapshot
+ * start null so the two renders agree, and the switch to real data is driven by
+ * an explicit notification rather than by React noticing the value changed
+ * behind its back.
+ */
+const getSnapshot = (): Progress | null => snapshot;
 const getServerSnapshot = (): Progress | null => null;
+
+/** Reads localStorage into the store exactly once, then wakes subscribers. */
+function hydrate() {
+  if (snapshot !== null) return;
+  snapshot = readLocal();
+  for (const listener of listeners) listener();
+}
 
 function commit(next: Progress) {
   snapshot = next;
@@ -101,6 +109,10 @@ export function ProgressProvider({ children }: { children: React.ReactNode }) {
 
   const [user, setUser] = useState<AccountUser | null>(null);
   const [accountsEnabled, setAccountsEnabled] = useState(false);
+
+  // localStorage cannot be read while rendering on the server, so the real
+  // value is pulled in on mount and pushed through the store's subscription.
+  useEffect(hydrate, []);
   const [authReady, setAuthReady] = useState(false);
   const [syncState, setSyncState] = useState<SyncState>("idle");
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);

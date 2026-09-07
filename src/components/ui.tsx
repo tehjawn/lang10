@@ -1,20 +1,21 @@
 "use client";
 
 import Link from "next/link";
+import { motion } from "motion/react";
 import type { ComponentProps, ReactNode } from "react";
 
 export const cx = (...parts: (string | false | null | undefined)[]) =>
   parts.filter(Boolean).join(" ");
 
-export function Card({
-  className,
-  children,
-  ...rest
-}: ComponentProps<"div">) {
+/** Shared spring. Firm enough to feel physical, short enough to stay out of the way. */
+export const SPRING = { type: "spring", stiffness: 420, damping: 32, mass: 0.7 } as const;
+export const SOFT_SPRING = { type: "spring", stiffness: 260, damping: 26 } as const;
+
+export function Card({ className, children, ...rest }: ComponentProps<"div">) {
   return (
     <div
       className={cx(
-        "rounded-2xl border border-border bg-surface p-5 shadow-[0_1px_2px_rgba(0,0,0,0.04)]",
+        "rounded-2xl border border-border bg-surface p-5 shadow-card",
         className,
       )}
       {...rest}
@@ -24,54 +25,79 @@ export function Card({
   );
 }
 
-const BUTTON_BASE =
-  "inline-flex items-center justify-center gap-2 rounded-xl font-semibold transition " +
-  "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent " +
-  "disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98]";
+const BASE =
+  "inline-flex select-none items-center justify-center gap-2 rounded-xl font-bold tracking-tight " +
+  "disabled:cursor-not-allowed disabled:opacity-45 disabled:saturate-50";
 
 const VARIANTS = {
-  primary: "bg-accent text-accent-fg hover:opacity-90",
-  soft: "bg-accent-soft text-accent hover:brightness-95",
-  outline: "border border-border bg-surface text-text hover:bg-surface-2",
-  ghost: "text-muted hover:bg-surface-2 hover:text-text",
-  danger: "bg-danger-soft text-danger hover:brightness-95",
+  /** The one action colour. Used for the primary move on any screen. */
+  matcha: "tactile bg-matcha text-on-brand border-matcha-deep hover:bg-matcha-hover",
+  torii: "tactile bg-torii text-white border-torii-deep hover:brightness-105",
+  outline: "tactile bg-surface text-ink border-border-strong ring-1 ring-border hover:bg-surface-2",
+  soft: "bg-matcha-soft text-matcha hover:brightness-97",
+  ghost: "text-muted hover:bg-surface-2 hover:text-ink",
+  danger: "bg-torii-soft text-torii hover:brightness-97",
 } as const;
 
 const SIZES = {
   sm: "h-9 px-3 text-sm",
   md: "h-11 px-4 text-sm",
   lg: "h-14 px-6 text-base",
+  xl: "h-16 px-8 text-lg",
 } as const;
 
-type ButtonStyleProps = {
-  variant?: keyof typeof VARIANTS;
-  size?: keyof typeof SIZES;
-};
+type StyleProps = { variant?: keyof typeof VARIANTS; size?: keyof typeof SIZES };
 
 export function Button({
-  variant = "primary",
+  variant = "matcha",
   size = "md",
   className,
   ...rest
-}: ButtonStyleProps & ComponentProps<"button">) {
-  return <button className={cx(BUTTON_BASE, VARIANTS[variant], SIZES[size], className)} {...rest} />;
+}: StyleProps & ComponentProps<"button">) {
+  return <button className={cx(BASE, VARIANTS[variant], SIZES[size], className)} {...rest} />;
 }
 
 export function ButtonLink({
-  variant = "primary",
+  variant = "matcha",
   size = "md",
   className,
   ...rest
-}: ButtonStyleProps & ComponentProps<typeof Link>) {
-  return <Link className={cx(BUTTON_BASE, VARIANTS[variant], SIZES[size], className)} {...rest} />;
+}: StyleProps & ComponentProps<typeof Link>) {
+  return <Link className={cx(BASE, VARIANTS[variant], SIZES[size], className)} {...rest} />;
 }
 
-/** Circular progress meter used for the daily goal. */
+/**
+ * Icon button with motion press compression. Used where there is no room for
+ * the 4px lip treatment.
+ */
+export function IconButton({
+  className,
+  children,
+  ...rest
+}: ComponentProps<typeof motion.button>) {
+  return (
+    <motion.button
+      type="button"
+      whileTap={{ scale: 0.9 }}
+      whileHover={{ scale: 1.05 }}
+      transition={SPRING}
+      className={cx(
+        "grid place-items-center rounded-full border border-border bg-surface text-matcha",
+        className,
+      )}
+      {...rest}
+    >
+      {children}
+    </motion.button>
+  );
+}
+
+/** Circular meter for the daily goal. */
 export function Ring({
   value,
   max,
   size = 132,
-  stroke = 11,
+  stroke = 12,
   children,
 }: {
   value: number;
@@ -92,20 +118,21 @@ export function Ring({
           cy={size / 2}
           r={radius}
           fill="none"
-          stroke="var(--ring-track)"
+          stroke="var(--track)"
           strokeWidth={stroke}
         />
-        <circle
+        <motion.circle
           cx={size / 2}
           cy={size / 2}
           r={radius}
           fill="none"
-          stroke="var(--accent)"
+          stroke="var(--matcha)"
           strokeWidth={stroke}
           strokeLinecap="round"
           strokeDasharray={circumference}
-          strokeDashoffset={circumference * (1 - pct)}
-          className="transition-[stroke-dashoffset] duration-500 ease-out"
+          initial={{ strokeDashoffset: circumference }}
+          animate={{ strokeDashoffset: circumference * (1 - pct) }}
+          transition={{ ...SOFT_SPRING, delay: 0.15 }}
         />
       </svg>
       <div className="absolute inset-0 grid place-items-center text-center">{children}</div>
@@ -123,23 +150,40 @@ export function Stat({
   hint?: string;
 }) {
   return (
-    <div className="rounded-xl border border-border bg-surface px-3 py-3 text-center">
-      <div className="text-xl font-bold tabular-nums sm:text-2xl">{value}</div>
-      <div className="mt-0.5 text-[11px] font-medium tracking-wide text-muted uppercase">
-        {label}
-      </div>
+    <div className="rounded-2xl border border-border bg-surface px-3 py-3 text-center shadow-card">
+      <div className="text-xl font-extrabold tabular-nums sm:text-2xl">{value}</div>
+      <div className="mt-0.5 text-[11px] font-bold tracking-wide text-muted uppercase">{label}</div>
       {hint ? <div className="mt-1 text-xs text-muted">{hint}</div> : null}
     </div>
   );
 }
 
-export function Bar({ pct, className }: { pct: number; className?: string }) {
+export function Bar({
+  pct,
+  className,
+  tone = "matcha",
+}: {
+  pct: number;
+  className?: string;
+  tone?: "matcha" | "torii";
+}) {
   return (
-    <div className={cx("h-1.5 w-full overflow-hidden rounded-full bg-[var(--ring-track)]", className)}>
-      <div
-        className="h-full rounded-full bg-accent transition-[width] duration-500"
-        style={{ width: `${Math.round(Math.min(1, Math.max(0, pct)) * 100)}%` }}
+    <div className={cx("h-2 w-full overflow-hidden rounded-full bg-track", className)}>
+      <motion.div
+        className={cx("h-full rounded-full", tone === "torii" ? "bg-torii" : "bg-matcha")}
+        initial={false}
+        animate={{ width: `${Math.round(Math.min(1, Math.max(0, pct)) * 100)}%` }}
+        transition={SOFT_SPRING}
       />
     </div>
+  );
+}
+
+/** The red seal used for streaks and the end-of-session stamp. */
+export function ToriiMark({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="currentColor" aria-hidden>
+      <path d="M2.6 4.2c3 1 6 1.5 9.4 1.5s6.4-.5 9.4-1.5v2.9c-.9.3-1.8.5-2.7.7V9h2.2v2.6h-2.2v8.2h-2.7v-8.2H8v8.2H5.3v-8.2H3.1V9h2.2V7.8c-.9-.2-1.8-.4-2.7-.7V4.2Zm5.4 4.1v.7h8v-.7c-1.3.1-2.6.2-4 .2s-2.7-.1-4-.2Z" />
+    </svg>
   );
 }

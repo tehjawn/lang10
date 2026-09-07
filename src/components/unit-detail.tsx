@@ -16,7 +16,7 @@ export function UnitDetail({ unit }: { unit: Unit }) {
   return (
     <div className="space-y-5">
       <Card className="flex items-center gap-4">
-        <span className="jp grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-accent-soft text-2xl text-accent">
+        <span className="jp grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-matcha-soft text-2xl text-matcha">
           {unit.emoji}
         </span>
         <div className="min-w-0 flex-1">
@@ -89,9 +89,9 @@ function StateBadge({
       className={cx(
         "shrink-0 rounded-full px-2 py-0.5 text-[11px] font-bold",
         state === "new" && "bg-surface-2 text-muted",
-        state === "learning" && "bg-accent-soft text-accent",
-        state === "due" && "bg-danger-soft text-danger",
-        state === "learned" && "bg-success-soft text-success",
+        state === "learning" && "bg-matcha-soft text-matcha",
+        state === "due" && "bg-torii-soft text-torii",
+        state === "learned" && "bg-matcha-soft text-matcha",
       )}
     >
       {label}

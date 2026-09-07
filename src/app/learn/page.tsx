@@ -1,4 +1,4 @@
-import { SessionPlayer } from "@/components/session-player";
+import { SessionPlayer } from "@/components/lesson/session-player";
 
 export const metadata = { title: "Lesson — Lang10" };
 

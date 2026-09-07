@@ -1,4 +1,4 @@
-import { ITEMS, ITEMS_BY_ID } from "@/data/japanese";
+import { ITEMS, ITEMS_BY_ID, isOrderable } from "@/data/japanese";
 import type { Item } from "@/data/types";
 import { NEW_ITEM_RESERVE, dueCards, newItems, type Progress } from "./progress";
 
@@ -15,7 +15,9 @@ export type Step =
   /** Hear the Japanese, pick the English. */
   | { kind: "listen"; item: Item; options: Item[] }
   /** Show Japanese, type the English (romaji for kana items). */
-  | { kind: "type"; item: Item };
+  | { kind: "type"; item: Item }
+  /** Show English, rebuild the Japanese phrase from shuffled pieces. */
+  | { kind: "order"; item: Item; chunks: string[] };
 
 export type QuizStep = Exclude<Step, { kind: "teach" }>;
 
@@ -59,17 +61,33 @@ function exerciseFor(item: Item, box: number, canListen: boolean): QuizStep {
   const ladder: QuizStep["kind"][][] = [
     ["recognize"],
     ["recognize", "recall"],
-    ["recall", "listen"],
-    ["recall", "type"],
-    ["type", "listen"],
-    ["type"],
+    ["recall", "listen", "order"],
+    ["recall", "type", "order"],
+    ["type", "listen", "order"],
+    ["type", "order"],
     ["type"],
   ];
-  const choices = (ladder[box] ?? ["type"]).filter((k) => k !== "listen" || canListen);
+  const choices = (ladder[box] ?? ["type"]).filter(
+    (k) => (k !== "listen" || canListen) && (k !== "order" || isOrderable(item)),
+  );
   const kind = choices[Math.floor(Math.random() * choices.length)] ?? "recognize";
-  return kind === "type"
-    ? { kind: "type", item }
-    : { kind, item, options: withOptions(item) };
+  if (kind === "type") return { kind: "type", item };
+  if (kind === "order") {
+    return { kind: "order", item, chunks: shuffleUntilMoved(item.chunks!) };
+  }
+  return { kind, item, options: withOptions(item) };
+}
+
+/**
+ * Shuffle that will not hand back the answer already in order. Falls back after
+ * a few tries so a pathological input cannot spin.
+ */
+function shuffleUntilMoved(chunks: string[]): string[] {
+  for (let i = 0; i < 8; i++) {
+    const next = shuffle(chunks);
+    if (next.some((c, idx) => c !== chunks[idx])) return next;
+  }
+  return [...chunks].reverse();
 }
 
 export type SessionPlan = {
@@ -155,6 +173,11 @@ const normalize = (s: string) =>
 /** Accepted written answers for an item: English, its alternates, and romaji. */
 export function acceptedAnswers(item: Item): string[] {
   return [item.en, ...(item.alt ?? []), item.romaji];
+}
+
+/** The assembled pieces are correct when they rebuild the written phrase. */
+export function checkOrder(item: Item, given: string[]): boolean {
+  return given.join("") === item.ja;
 }
 
 export function checkTyped(item: Item, input: string): boolean {

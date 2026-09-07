@@ -29,6 +29,25 @@ const kana = (unit: string, rows: [string, string][]): Item[] =>
     en: romaji,
   }));
 
+/**
+ * Phrase rows are [chunks, kana, romaji, english, alternates?]. The written
+ * form is derived from the chunks so the two can never drift apart.
+ */
+const phrases = (
+  unit: string,
+  rows: [string[], string, string, string, string[]?][],
+): Item[] =>
+  rows.map(([chunks, kanaForm, romaji, en, alt]) => ({
+    id: `${unit}-${slug(romaji)}`,
+    unit,
+    ja: chunks.join(""),
+    kana: kanaForm,
+    romaji,
+    en,
+    ...(alt ? { alt } : {}),
+    ...(chunks.length >= 3 ? { chunks } : {}),
+  }));
+
 /** Vocab rows are [written, kana, romaji, english, ...alternates]. */
 const vocab = (unit: string, rows: [string, string, string, string, string[]?][]): Item[] =>
   rows.map(([ja, kanaForm, romaji, en, alt]) => ({
@@ -184,19 +203,19 @@ export const ITEMS: Item[] = [
     ["簡単", "かんたん", "kantan", "easy", ["simple"]],
     ["いい", "いい", "ii", "good", ["nice"]],
   ]),
-  ...vocab("phrases", [
-    ["お元気ですか", "おげんきですか", "ogenki desu ka", "how are you?", ["how are you"]],
-    ["名前は何ですか", "なまえはなんですか", "namae wa nan desu ka", "what is your name?", ["what's your name", "what is your name"]],
-    ["いくらですか", "いくらですか", "ikura desu ka", "how much is it?", ["how much is it", "how much"]],
-    ["分かりません", "わかりません", "wakarimasen", "I don't understand", ["i dont understand"]],
-    ["日本語が話せません", "にほんごがはなせません", "nihongo ga hanasemasen", "I can't speak Japanese", ["i cant speak japanese"]],
-    ["英語を話せますか", "えいごをはなせますか", "eigo o hanasemasu ka", "do you speak English?", ["do you speak english"]],
-    ["トイレはどこですか", "トイレはどこですか", "toire wa doko desu ka", "where is the toilet?", ["where is the toilet", "where is the bathroom"]],
-    ["助けて", "たすけて", "tasukete", "help!", ["help"]],
-    ["もう一度お願いします", "もういちどおねがいします", "mou ichido onegaishimasu", "one more time, please", ["one more time"]],
-    ["これをください", "これをください", "kore o kudasai", "this one, please", ["this one please", "this please"]],
-    ["大丈夫です", "だいじょうぶです", "daijoubu desu", "it's fine", ["its fine", "i'm okay", "im okay", "it is fine"]],
-    ["また明日", "またあした", "mata ashita", "see you tomorrow"],
+  ...phrases("phrases", [
+    [["お元気", "です", "か"], "おげんきですか", "ogenki desu ka", "how are you?", ["how are you"]],
+    [["名前", "は", "何", "です", "か"], "なまえはなんですか", "namae wa nan desu ka", "what is your name?", ["what's your name", "what is your name"]],
+    [["いくら", "です", "か"], "いくらですか", "ikura desu ka", "how much is it?", ["how much is it", "how much"]],
+    [["分かり", "ません"], "わかりません", "wakarimasen", "I don't understand", ["i dont understand"]],
+    [["日本語", "が", "話せ", "ません"], "にほんごがはなせません", "nihongo ga hanasemasen", "I can't speak Japanese", ["i cant speak japanese"]],
+    [["英語", "を", "話せ", "ます", "か"], "えいごをはなせますか", "eigo o hanasemasu ka", "do you speak English?", ["do you speak english"]],
+    [["トイレ", "は", "どこ", "です", "か"], "トイレはどこですか", "toire wa doko desu ka", "where is the toilet?", ["where is the toilet", "where is the bathroom"]],
+    [["助け", "て"], "たすけて", "tasukete", "help!", ["help"]],
+    [["もう一度", "お願い", "します"], "もういちどおねがいします", "mou ichido onegaishimasu", "one more time, please", ["one more time"]],
+    [["これ", "を", "ください"], "これをください", "kore o kudasai", "this one, please", ["this one please", "this please"]],
+    [["大丈夫", "です"], "だいじょうぶです", "daijoubu desu", "it's fine", ["its fine", "i'm okay", "im okay", "it is fine"]],
+    [["また", "明日"], "またあした", "mata ashita", "see you tomorrow"],
   ]),
 ];
 
@@ -207,3 +226,6 @@ export const UNITS_BY_ID = new Map(UNITS.map((u) => [u.id, u]));
 export const UNIT_ORDER = UNITS.map((u) => u.id);
 
 export const itemsForUnit = (unitId: string) => ITEMS.filter((i) => i.unit === unitId);
+
+/** Items that can be assembled from pieces in the ordering exercise. */
+export const isOrderable = (item: Item) => (item.chunks?.length ?? 0) >= 3;

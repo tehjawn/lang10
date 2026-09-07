@@ -1,68 +1,93 @@
 @import "tailwindcss";
 
 /*
- * Lang10 palette. Light values live on :root; the dark block only swaps the
- * token values, so every component stays theme-agnostic.
+ * Lang10 — "Warm Modernism × Japanese Minimalism".
+ *
+ * Light mode is rice paper under ink; dark mode is ink with the paper's warmth
+ * carried into the text. Only token values change between the two, so every
+ * component stays theme-agnostic.
+ *
+ * Matcha is the single action colour. Torii red is the single attention colour:
+ * it marks streaks, the hanko stamp, and wrong answers alike. Those never share
+ * a screen, and each carries its own iconography, so one red stays legible.
  */
 :root {
-  --bg: #f6f6fb;
-  --bg-alt: #eeeef7;
+  --paper: #fdfbf7;
+  --paper-alt: #f5f1e8;
   --surface: #ffffff;
-  --surface-2: #fafaff;
-  --border: #e4e4f0;
-  --text: #15151f;
-  --muted: #6a6a80;
-  --accent: #5b5bd6;
-  --accent-soft: #ecebff;
-  --accent-fg: #ffffff;
-  --sakura: #e05f8a;
-  --success: #17914f;
-  --success-soft: #e3f7ec;
-  --danger: #d33b46;
-  --danger-soft: #fdeaec;
-  --ring-track: #e4e4f0;
+  --surface-2: #faf7f1;
+  --border: #e9e2d6;
+  /* Deeper edge used for the 4px lip under tactile controls. */
+  --border-strong: #d8cfbe;
+  --ink: #1a1a1a;
+  --muted: #6e675c;
+
+  --matcha: #2e7d32;
+  --matcha-hover: #27692b;
+  --matcha-deep: #1d5220;
+  --matcha-soft: #e7f1e5;
+
+  --torii: #e53935;
+  --torii-deep: #a92c29;
+  --torii-soft: #fdeceb;
+
+  --on-brand: #ffffff;
+  --track: #e9e2d6;
+  --shadow-card: 0 1px 2px rgb(26 26 26 / 0.05), 0 8px 24px -16px rgb(26 26 26 / 0.18);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #0a0a11;
-    --bg-alt: #10101a;
-    --surface: #14141f;
-    --surface-2: #1a1a27;
-    --border: #272738;
-    --text: #f1f1f6;
-    --muted: #9d9db4;
-    --accent: #8b8bf5;
-    --accent-soft: #1e1e3a;
-    --accent-fg: #0a0a11;
-    --sakura: #f58bb0;
-    --success: #3ecf8e;
-    --success-soft: #10281d;
-    --danger: #ff6b78;
-    --danger-soft: #2a1218;
-    --ring-track: #272738;
+    --paper: #1a1a1a;
+    --paper-alt: #141414;
+    --surface: #232323;
+    --surface-2: #2b2a28;
+    --border: #383735;
+    --border-strong: #4a4845;
+    --ink: #f5f1e8;
+    --muted: #a49c8f;
+
+    --matcha: #4caf50;
+    --matcha-hover: #5cbb60;
+    --matcha-deep: #2f7233;
+    --matcha-soft: #1b2a1c;
+
+    --torii: #ff5a55;
+    --torii-deep: #a5322f;
+    --torii-soft: #2e1817;
+
+    --on-brand: #10240f;
+    --track: #383735;
+    --shadow-card: 0 1px 2px rgb(0 0 0 / 0.4);
   }
 }
 
 @theme inline {
-  --color-bg: var(--bg);
-  --color-bg-alt: var(--bg-alt);
+  --color-paper: var(--paper);
+  --color-paper-alt: var(--paper-alt);
   --color-surface: var(--surface);
   --color-surface-2: var(--surface-2);
   --color-border: var(--border);
-  --color-text: var(--text);
+  --color-border-strong: var(--border-strong);
+  --color-ink: var(--ink);
   --color-muted: var(--muted);
-  --color-accent: var(--accent);
-  --color-accent-soft: var(--accent-soft);
-  --color-accent-fg: var(--accent-fg);
-  --color-sakura: var(--sakura);
-  --color-success: var(--success);
-  --color-success-soft: var(--success-soft);
-  --color-danger: var(--danger);
-  --color-danger-soft: var(--danger-soft);
-  --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
-  --font-jp: "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", "Noto Sans JP",
-    "Noto Sans CJK JP", "MS Gothic", sans-serif;
+
+  --color-matcha: var(--matcha);
+  --color-matcha-hover: var(--matcha-hover);
+  --color-matcha-deep: var(--matcha-deep);
+  --color-matcha-soft: var(--matcha-soft);
+
+  --color-torii: var(--torii);
+  --color-torii-deep: var(--torii-deep);
+  --color-torii-soft: var(--torii-soft);
+
+  --color-on-brand: var(--on-brand);
+  --color-track: var(--track);
+
+  --font-sans: var(--font-nunito), ui-rounded, "SF Pro Rounded", system-ui, sans-serif;
+  --font-jp: "Zen Maru Gothic", "Hiragino Maru Gothic ProN", "Yu Gothic", "Noto Sans JP", sans-serif;
+
+  --shadow-card: var(--shadow-card);
 }
 
 html {
@@ -70,49 +95,72 @@ html {
 }
 
 body {
-  background: var(--bg);
-  color: var(--text);
+  background: var(--paper);
+  color: var(--ink);
   -webkit-font-smoothing: antialiased;
-  /* Keeps the fixed mobile nav clear of the iOS home indicator. */
   padding-bottom: env(safe-area-inset-bottom);
 }
 
-/* Japanese glyphs need the CJK stack and a little extra tracking to read well. */
+/* Japanese glyphs get the rounded CJK face and a little air to breathe. */
 .jp {
   font-family: var(--font-jp);
-  letter-spacing: 0.02em;
+  letter-spacing: 0.03em;
+  font-feature-settings: "palt" 1;
 }
 
+/*
+ * Tactile press. The control sits on a 4px lip; pressing sinks it by 2px while
+ * the lip shrinks by the same amount, so the bottom edge never moves — the
+ * button compresses rather than sliding.
+ */
+.tactile {
+  border-bottom-width: 4px;
+  transition:
+    transform 70ms ease,
+    border-bottom-width 70ms ease,
+    background-color 140ms ease,
+    filter 140ms ease;
+}
+
+.tactile:active:not(:disabled):not([aria-disabled="true"]) {
+  transform: translateY(2px);
+  border-bottom-width: 2px;
+}
+
+/* Honour the OS setting; Framer Motion is configured to match via MotionConfig. */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
     animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
   }
-}
 
-@keyframes pop-in {
-  from {
-    opacity: 0;
-    transform: translateY(8px) scale(0.98);
-  }
-  to {
-    opacity: 1;
+  .tactile:active:not(:disabled) {
     transform: none;
   }
 }
 
-.animate-pop {
-  animation: pop-in 0.22s ease-out both;
+/* Focus ring that reads on both paper and ink. */
+:where(a, button, input, [tabindex]):focus-visible {
+  outline: 3px solid var(--matcha);
+  outline-offset: 2px;
+  border-radius: 0.5rem;
 }
 
-@keyframes shake {
-  10%, 90% { transform: translateX(-2px); }
-  30%, 70% { transform: translateX(4px); }
-  50% { transform: translateX(-4px); }
+@keyframes torii-glow {
+  0%, 100% { opacity: 0.55; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.18); }
 }
 
-.animate-shake {
-  animation: shake 0.35s ease-in-out both;
+.streak-glow::after {
+  content: "";
+  position: absolute;
+  inset: -4px;
+  border-radius: 9999px;
+  background: radial-gradient(circle, var(--torii) 0%, transparent 68%);
+  opacity: 0.5;
+  animation: torii-glow 2.6s ease-in-out infinite;
+  pointer-events: none;
 }

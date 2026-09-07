@@ -21,4 +21,11 @@ export type Item = {
   en: string;
   /** Extra English spellings accepted when typing. */
   alt?: string[];
+  /**
+   * The phrase broken into the pieces a learner assembles in the ordering
+   * exercise. Joined, these must equal `ja`. Only present where the split is
+   * natural and yields at least three pieces — two-piece phrases make for a
+   * trivial puzzle, so those items simply never get the exercise.
+   */
+  chunks?: string[];
 };

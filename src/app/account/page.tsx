@@ -37,7 +37,7 @@ export default function AccountPage() {
           </>
         ) : user ? (
           <div className="flex flex-wrap items-center gap-4">
-            <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-accent-soft text-lg font-bold text-accent">
+            <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-matcha-soft text-lg font-bold text-matcha">
               {(user.name ?? user.email).slice(0, 1).toUpperCase()}
             </span>
             <div className="min-w-0 flex-1">
@@ -77,8 +77,8 @@ export default function AccountPage() {
               className={cx(
                 "rounded-xl border-2 py-3 font-bold tabular-nums transition",
                 ready && progress.dailyGoal === goal
-                  ? "border-accent bg-accent-soft text-accent"
-                  : "border-border bg-surface text-muted hover:border-accent",
+                  ? "border-matcha bg-matcha-soft text-matcha"
+                  : "border-border bg-surface text-muted hover:border-matcha",
               )}
             >
               {goal}
@@ -101,7 +101,7 @@ export default function AccountPage() {
           {confirmingReset ? (
             <>
               <Button
-                variant="danger"
+                variant="torii"
                 onClick={() => {
                   reset();
                   setConfirmingReset(false);

@@ -12,7 +12,7 @@ import {
   unitStats,
 } from "@/lib/progress";
 import { useProgress } from "@/lib/store";
-import { Bar, ButtonLink, Card, Stat, cx } from "@/components/ui";
+import { Bar, ButtonLink, Card, Stat, ToriiMark, cx } from "@/components/ui";
 
 const HEATMAP_WEEKS = 13;
 
@@ -33,7 +33,16 @@ export default function ProgressPage() {
       <h1 className="px-1 text-2xl font-extrabold tracking-tight">Progress</h1>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <Stat label="Streak" value={`${progress.streak}🔥`} hint={`Best ${progress.bestStreak}`} />
+        <Stat
+          label="Streak"
+          value={
+            <span className="inline-flex items-center gap-1.5 text-torii">
+              <ToriiMark className="h-5 w-5" />
+              {progress.streak}
+            </span>
+          }
+          hint={`Best ${progress.bestStreak}`}
+        />
         <Stat label="XP" value={progress.xp.toLocaleString()} />
         <Stat label="Accuracy" value={`${Math.round(stats.accuracy * 100)}%`} hint={`${stats.answers} answers`} />
         <Stat label="Learned" value={`${stats.learned}/${stats.total}`} />
@@ -57,7 +66,7 @@ export default function ProgressPage() {
               <span
                 className={cx(
                   "w-24 shrink-0 font-semibold",
-                  box >= LEARNED_BOX ? "text-success" : "text-muted",
+                  box >= LEARNED_BOX ? "text-matcha" : "text-muted",
                 )}
               >
                 {box === 0 ? "New" : `${BOX_INTERVALS[box]}-day`}
@@ -83,7 +92,7 @@ export default function ProgressPage() {
               <li key={unit.id}>
                 <Link href={`/unit/${unit.id}`} className="group block">
                   <div className="flex items-baseline justify-between text-sm">
-                    <span className="font-semibold group-hover:text-accent">{unit.title}</span>
+                    <span className="font-semibold group-hover:text-matcha">{unit.title}</span>
                     <span className="tabular-nums text-muted">
                       {u.learned}/{u.total}
                     </span>
@@ -128,10 +137,10 @@ function Heatmap({ history, goal }: { history: Record<string, number>; goal: num
                   cell.future
                     ? "bg-transparent"
                     : cell.count === 0
-                      ? "bg-[var(--ring-track)]"
+                      ? "bg-track"
                       : cell.count >= goal
-                        ? "bg-accent"
-                        : "bg-accent/45",
+                        ? "bg-matcha"
+                        : "bg-matcha/45",
                 )}
               />
             ))}
@@ -140,9 +149,9 @@ function Heatmap({ history, goal }: { history: Record<string, number>; goal: num
       </div>
       <div className="mt-3 flex items-center gap-2 text-xs text-muted">
         <span>Less</span>
-        <span className="h-3 w-3 rounded-[3px] bg-[var(--ring-track)]" />
-        <span className="h-3 w-3 rounded-[3px] bg-accent/45" />
-        <span className="h-3 w-3 rounded-[3px] bg-accent" />
+        <span className="h-3 w-3 rounded-[3px] bg-track" />
+        <span className="h-3 w-3 rounded-[3px] bg-matcha/45" />
+        <span className="h-3 w-3 rounded-[3px] bg-matcha" />
         <span>Goal met</span>
       </div>
     </div>
