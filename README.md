@@ -121,10 +121,17 @@ Three defaults do most of the work of keeping the app quiet:
 - **Correct answers advance themselves** after a short beat, so a clean run
   costs one interaction per question instead of two. Wrong answers always wait:
   that is the screen worth reading. Turn it off under Account.
-- **A correct answer chimes.** A two-note rising fifth, synthesised with Web
-  Audio rather than shipped as a file. It is triggered from the grading gesture
-  itself, which is what satisfies browser autoplay rules. Wrong answers stay
-  silent — the sound is encouragement, not a verdict. Turn it off under Account.
+- **The app has a small voice.** Four cues, all synthesised with Web Audio
+  rather than shipped as files, and all built from the yo scale so they sound
+  related: a rising fifth for correct, a softened falling third for wrong, a
+  pentatonic run for the daily goal, and a shorter flourish for extra practice.
+  Answer cues fire from the grading gesture itself, which is what satisfies
+  browser autoplay rules. Turn them off under Account.
+- **Ambient motion, on jittered timers.** Streak marks, the day cell in the
+  activity grid, and the goal ring pulse every ten to twenty seconds rather
+  than continuously. The randomised interval is deliberate: on a fixed one the
+  pulses fall into step and the page throbs as a whole, which reads as a loading
+  state. Suppressed under prefers-reduced-motion and while the tab is hidden.
 - **The home screen carries one decision.** The unit grid is collapsed behind a
   disclosure, and the account prompt waits until there is a streak or twenty
   items to protect — asking sooner is a decision with nothing behind it.

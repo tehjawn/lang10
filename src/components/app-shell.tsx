@@ -4,9 +4,10 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion } from "motion/react";
 import { answeredToday } from "@/lib/progress";
+import { useOccasional } from "@/lib/use-occasional";
 import { useProgress } from "@/lib/store";
 import { ThemeToggle } from "./theme";
-import { SPRING, ToriiMark, cx } from "./ui";
+import { PulseHalo, SPRING, ToriiMark, cx } from "./ui";
 
 const NAV = [
   { href: "/", label: "Today", icon: HomeIcon },
@@ -39,6 +40,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 function Header({ pathname }: { pathname: string }) {
   const { progress, ready } = useProgress();
   const done = answeredToday(progress);
+  // Only a live streak is worth drawing attention back to.
+  const streakTick = useOccasional({
+    minMs: 12_000,
+    maxMs: 21_000,
+    enabled: ready && progress.streak > 0,
+  });
 
   return (
     <header className="sticky top-0 z-20 border-b border-border bg-paper/85 backdrop-blur">
@@ -81,9 +88,7 @@ function Header({ pathname }: { pathname: string }) {
             title="Day streak"
           >
             <span className="relative grid place-items-center">
-              {ready && progress.streak > 0 && (
-                <span className="streak-glow absolute inset-0" aria-hidden />
-              )}
+              {ready && progress.streak > 0 && <PulseHalo tick={streakTick} />}
               <ToriiMark className="relative h-4 w-4" />
             </span>
             {ready ? progress.streak : "–"}

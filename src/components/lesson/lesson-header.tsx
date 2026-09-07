@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { motion } from "motion/react";
-import { SOFT_SPRING, ToriiMark } from "@/components/ui";
+import { PulseHalo, SOFT_SPRING, ToriiMark } from "@/components/ui";
+import { useOccasional } from "@/lib/use-occasional";
 
 export function LessonHeader({
   done,
@@ -14,6 +15,8 @@ export function LessonHeader({
   streak: number;
 }) {
   const pct = total ? Math.min(1, done / total) : 0;
+  // Rarer mid-lesson than elsewhere — nothing should compete with the question.
+  const streakTick = useOccasional({ minMs: 20_000, maxMs: 34_000, enabled: streak > 0 });
 
   return (
     <header className="sticky top-0 z-20 flex items-center gap-3 border-b border-border bg-paper/90 px-4 py-3 backdrop-blur">
@@ -51,7 +54,7 @@ export function LessonHeader({
         title={`${streak} day streak`}
       >
         <span className="relative grid place-items-center">
-          <span className="streak-glow absolute inset-0" aria-hidden />
+          {streak > 0 && <PulseHalo tick={streakTick} />}
           <ToriiMark className="relative h-5 w-5" />
         </span>
         {streak}

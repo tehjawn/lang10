@@ -179,6 +179,56 @@ export function Bar({
   );
 }
 
+/**
+ * A halo that blooms outward once per `tick`. Keyed on the tick so each change
+ * replays the animation from the start; the parent decides how often that is.
+ * Multi-keyframe sequences run on a duration — Motion springs only support two.
+ */
+export function PulseHalo({
+  tick,
+  tone = "torii",
+  className,
+}: {
+  tick: number;
+  tone?: "torii" | "matcha";
+  className?: string;
+}) {
+  return (
+    <motion.span
+      key={tick}
+      aria-hidden
+      className={cx("pointer-events-none absolute inset-0 rounded-full", className)}
+      style={{ background: `radial-gradient(circle, var(--${tone}) 0%, transparent 68%)` }}
+      initial={{ opacity: 0, scale: 0.65 }}
+      animate={{ opacity: [0, 0.5, 0], scale: [0.65, 1.7, 2.1] }}
+      transition={{ duration: 1.5, ease: "easeOut", times: [0, 0.35, 1] }}
+    />
+  );
+}
+
+/** An expanding outline, for marking a spot rather than lighting it up. */
+export function PulseRing({
+  tick,
+  tone = "matcha",
+  className,
+}: {
+  tick: number;
+  tone?: "torii" | "matcha";
+  className?: string;
+}) {
+  return (
+    <motion.span
+      key={tick}
+      aria-hidden
+      className={cx("pointer-events-none absolute inset-0 rounded-[4px] border-2", className)}
+      style={{ borderColor: `var(--${tone})` }}
+      initial={{ opacity: 0, scale: 1 }}
+      animate={{ opacity: [0, 0.8, 0], scale: [1, 1.9, 2.4] }}
+      transition={{ duration: 1.4, ease: "easeOut", times: [0, 0.25, 1] }}
+    />
+  );
+}
+
 /** The red seal used for streaks and the end-of-session stamp. */
 export function ToriiMark({ className }: { className?: string }) {
   return (

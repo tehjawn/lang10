@@ -4,12 +4,19 @@ import Link from "next/link";
 import { UNITS } from "@/data/japanese";
 import { addDays, masteryCounts, overallStats, todayKey, unitStats } from "@/lib/progress";
 import { useProgress } from "@/lib/store";
-import { Bar, ButtonLink, Card, Stat, ToriiMark, cx } from "@/components/ui";
+import { Bar, ButtonLink, Card, PulseHalo, PulseRing, Stat, ToriiMark, cx } from "@/components/ui";
+import { useOccasional } from "@/lib/use-occasional";
 
 const HEATMAP_WEEKS = 13;
 
 export default function ProgressPage() {
   const { progress, ready } = useProgress();
+  // Hooks must run before the loading branch returns.
+  const streakTick = useOccasional({
+    minMs: 10_000,
+    maxMs: 19_000,
+    enabled: ready && progress.streak > 0,
+  });
 
   if (!ready) {
     return <div className="h-96 animate-pulse rounded-2xl border border-border bg-surface-2" />;
@@ -27,7 +34,10 @@ export default function ProgressPage() {
           label="Streak"
           value={
             <span className="inline-flex items-center gap-1.5 text-torii">
-              <ToriiMark className="h-5 w-5" />
+              <span className="relative grid place-items-center">
+                {progress.streak > 0 && <PulseHalo tick={streakTick} />}
+                <ToriiMark className="relative h-5 w-5" />
+              </span>
               {progress.streak}
             </span>
           }
@@ -95,6 +105,8 @@ export default function ProgressPage() {
 
 function Heatmap({ history, goal }: { history: Record<string, number>; goal: number }) {
   const today = todayKey();
+  // Marks where "now" is on a grid of ninety near-identical squares.
+  const todayTick = useOccasional({ minMs: 8_000, maxMs: 15_000 });
   // End the grid on the Saturday of this week so columns stay whole weeks.
   const weekday = new Date(`${today}T00:00:00`).getDay();
   const lastDay = addDays(today, 6 - weekday);
@@ -118,7 +130,7 @@ function Heatmap({ history, goal }: { history: Record<string, number>; goal: num
                 key={cell.key}
                 title={cell.future ? cell.key : `${cell.key} — ${cell.count} answers`}
                 className={cx(
-                  "h-3.5 w-3.5 rounded-[3px]",
+                  "relative h-3.5 w-3.5 rounded-[3px]",
                   cell.future
                     ? "bg-transparent"
                     : cell.count === 0
@@ -127,7 +139,14 @@ function Heatmap({ history, goal }: { history: Record<string, number>; goal: num
                         ? "bg-matcha"
                         : "bg-matcha/45",
                 )}
-              />
+              >
+                {cell.key === today && (
+                  <PulseRing
+                    tick={todayTick}
+                    tone={cell.count >= goal ? "matcha" : "torii"}
+                  />
+                )}
+              </div>
             ))}
           </div>
         ))}
